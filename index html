@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Africa Aviator Signals - Firebase Pro</title>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#0f172a;color:white;text-align:center;}
+header{background:#020617;padding:20px;}
+header h1{margin:0;font-size:26px;}
+nav{display:flex;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap;}
+nav button{background:#22c55e;border:none;padding:10px 16px;border-radius:6px;color:white;cursor:pointer;}
+.container{padding:15px;max-width:900px;margin:auto;}
+.card{background:#1e293b;padding:20px;border-radius:10px;margin-bottom:20px;box-shadow:0 0 15px rgba(0,0,0,0.4);}
+.hero h2{font-size:28px;margin-bottom:10px;}
+.hero p{color:#cbd5f5;}
+button{background:#22c55e;border:none;padding:12px 20px;border-radius:6px;color:white;cursor:pointer;margin:5px;}
+button:hover{background:#16a34a;}
+input{padding:10px;border-radius:6px;border:none;margin:8px;width:90%;}
+.signal{font-size:36px;font-weight:bold;margin:10px;}
+.signal.high{color:#facc15;}
+ul{list-style:none;padding:0;}
+li{padding:6px;border-bottom:1px solid #334155;}
+.hidden{display:none;}
+.footer{text-align:center;padding:20px;color:#94a3b8;}
+canvas{background:#0f172a;border-radius:10px;display:block;margin:auto;}
+.whatsapp{position:fixed;bottom:20px;right:20px;background:#25D366;color:white;padding:14px;border-radius:50px;text-decoration:none;}
+.countdown{font-size:20px;color:#60a5fa;margin:5px;}
+</style>
+</head>
+<body>
+
+<header>
+<h1>✈ Africa Aviator Signals - Firebase Pro</h1>
+<nav>
+<button onclick="showPage('home')">Home</button>
+<button onclick="showPage('signals')">Signals</button>
+<button onclick="showPage('login')">Admin</button>
+</nav>
+</header>
+
+<div class="container">
+
+<!-- HOME -->
+<div id="home">
+<div class="card hero">
+<h2>Professional Aviator Signal Platform</h2>
+<p>
+Africa Aviator Signals provides real-time crash multiplier signals.
+Admin posts live signals and all users see them immediately.
+</p>
+<br>
+<a href="https://wa.me/254741216552"><button>Contact Admin</button></a>
+<a href="https://whatsapp.com/channel/0029VbBw9Mm8vd1Gv1wwVd1r"><button>WhatsApp Channel</button></a>
+<a href="https://t.me/+3Hz-BIccbYVmMTI8"><button>Telegram Channel</button></a>
+</div>
+</div>
+
+<!-- SIGNALS DASHBOARD -->
+<div id="signals" class="hidden">
+<div class="card">
+<h2>Crash Plane</h2>
+<canvas id="planeCanvas" width="400" height="300"></canvas>
+<div class="signal" id="latestSignal">Waiting...</div>
+<div class="countdown" id="countdown">Next signal in 15s</div>
+</div>
+
+<div class="card">
+<h3>Signal History</h3>
+<ul id="history"></ul>
+</div>
+
+<div class="card">
+<h3>Statistics</h3>
+<p>Wins: <span id="wins">0</span></p>
+<p>Losses: <span id="losses">0</span></p>
+<p>Accuracy: <span id="accuracy">0%</span></p>
+</div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="login" class="hidden">
+<div class="card">
+<h2>Admin Login</h2>
+<input id="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+<p id="error"></p>
+</div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin" class="hidden">
+<div class="card">
+<h2>Post New Signal</h2>
+<input id="signalInput" placeholder="Example 5.40x ✅">
+<button onclick="postSignal()">Post Signal</button>
+</div>
+</div>
+
+</div>
+
+<div class="footer">© 2026 Africa Aviator Signals</div>
+<a class="whatsapp" href="https://wa.me/254741216552">Chat</a>
+
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script>
+// Firebase config - replace with your own
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  messagingSenderId: "SENDER_ID",
+  appId: "APP_ID"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const adminEmail = "kevinkipkorir212001@gmail.com";
+const adminPass = "462355";
+
+let signals = [];
+let countdownSec = 15;
+let animating=false;
+let targetMultiplier=0;
+
+const canvas = document.getElementById("planeCanvas");
+const ctx = canvas.getContext("2d");
+let planeY = 280;
+
+// Pages
+function showPage(page){
+  document.getElementById("home").classList.add("hidden");
+  document.getElementById("signals").classList.add("hidden");
+  document.getElementById("login").classList.add("hidden");
+  document.getElementById("admin").classList.add("hidden");
+  document.getElementById(page).classList.remove("hidden");
+}
+
+// Admin login
+function login(){
+  let email = document.getElementById("email").value.trim();
+  let pass = document.getElementById("password").value;
+  if(email===adminEmail && pass===adminPass){
+    showPage("admin");
+  } else {
+    document.getElementById("error").innerText="Wrong login";
+  }
+}
+
+// Post signal to Firebase
+function postSignal(){
+  let sig = document.getElementById("signalInput").value;
+  if(sig==="") return;
+  db.ref("signals").push(sig);
+  document.getElementById("signalInput").value="";
+  alert("Signal posted");
+}
+
+// Listen for signals in real time
+db.ref("signals").on("value", snapshot=>{
+  signals=[];
+  snapshot.forEach(child=>{
+    signals.unshift(child.val());
+  });
+  updateDashboard();
+  if(signals.length>0){
+    startCrashAnimation(signals[0]);
+  }
+});
+
+// Update dashboard
+function updateDashboard(){
+  const latest=document.getElementById("latestSignal");
+  latest.innerText=signals[0]||"Waiting...";
+  latest.className="signal"+(signals[0]&&signals[0].includes("5")?" high":"");
+
+  const historyEl=document.getElementById("history");
+  historyEl.innerHTML="";
+  signals.forEach(s=>{
+    let li=document.createElement("li");
+    li.innerText=s;
+    li.style.color = s.includes("✅")?"#22c55e":"#ef4444";
+    historyEl.appendChild(li);
+  });
+
+  let wins = signals.filter(s=>s.includes("✅")).length;
+  let losses = signals.filter(s=>s.includes("❌")).length;
+  let acc = signals.length?Math.round((wins/signals.length)*100):0;
+  document.getElementById("wins").innerText=wins;
+  document.getElementById("losses").innerText=losses;
+  document.getElementById("accuracy").innerText=acc+"%";
+}
+
+// Countdown
+setInterval(()=>{
+  countdownSec--;
+  if(countdownSec<=0) countdownSec=15;
+  document.getElementById("countdown").innerText="Next signal in "+countdownSec+"s";
+},1000);
+
+// Crash plane animation
+function startCrashAnimation(signal){
+  let num=parseFloat(signal);
+  if(isNaN(num)) return;
+  targetMultiplier=num;
+  planeY=280;
+  if(!animating) animating=true;
+  animatePlane();
+}
+
+function animatePlane(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#22c55e";
+  ctx.fillRect(180,planeY,40,40);
+  ctx.fillStyle="white";
+  ctx.font="20px Arial";
+  ctx.fillText(signals[0]||"0x",190,planeY-10);
+
+  if(animating){
+    let step = 280/(targetMultiplier*20);
+    planeY -= step;
+    if(planeY>280 - targetMultiplier*40){
+      requestAnimationFrame(animatePlane);
+    } else animating=false;
+  }
+}
+
+updateDashboard();
+</script>
+
+</body>
+</html>
